@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>线条游戏 · 田荣</title>
+  <style>
+    :root{--paper:#fffaf0;--ink:#21313a;--coral:#e66d4d;--green:#9dbb8a;--sand:#d4b98e}
+    *{box-sizing:border-box}html,body{height:100%;margin:0}body{background:var(--paper);color:var(--ink);font-family:Georgia,"Songti SC","STSong",serif;overflow:hidden}#game{position:relative;width:100%;height:100%;min-height:250px;background:linear-gradient(#d8ebea 0 54%,#d4b98e 54%);overflow:hidden}#game:before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(33,49,58,.18) .6px,transparent .6px);background-size:10px 10px;pointer-events:none}canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}.hud{position:absolute;inset:15px 17px auto;display:flex;justify-content:space-between;align-items:start;pointer-events:none;font:11px Arial,sans-serif;letter-spacing:.1em}.chip{background:rgba(255,250,240,.86);border:1px solid rgba(33,49,58,.35);padding:7px 9px}.help{position:absolute;left:17px;bottom:14px;font:11px Arial,sans-serif;color:rgba(33,49,58,.68);pointer-events:none}.restart{position:absolute;right:17px;bottom:12px;border:1px solid rgba(33,49,58,.4);background:rgba(255,250,240,.86);color:var(--ink);padding:6px 9px;font:11px Arial,sans-serif;cursor:pointer}.restart:hover{color:var(--coral)}
+  </style>
+</head>
+<body>
+  <div id="game"><canvas id="canvas" aria-label="线条游戏画布"></canvas><div class="hud"><span class="chip" id="score">距离 0 m</span><span class="chip" id="state">画一条路</span></div><div class="help">拖动画线 · 空格 / 点击跳跃</div><button class="restart" id="restart" type="button">重新开始</button></div>
+  <script>
+    const canvas=document.querySelector('#canvas');const ctx=canvas.getContext('2d');const scoreEl=document.querySelector('#score');const stateEl=document.querySelector('#state');const game=document.querySelector('#game');
+  let dpr=1,width=0,height=0,ground=0,route=[],drawing=false,player=null,score=0,last=0,raf=0;
+  const resize=()=>{dpr=Math.min(devicePixelRatio||1,2);width=game.clientWidth;height=game.clientHeight;canvas.width=width*dpr;canvas.height=height*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ground=height*.67;if(!player)reset()};
+  const reset=()=>{route=[{x:0,y:ground},{x:width*.28,y:ground},{x:width*.62,y:ground},{x:width,y:ground}];player={x:width*.22,y:ground-18,vy:0,on:true};score=0;stateEl.textContent='画一条路';last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)};
+  const point=e=>{const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
+  const drawPoint=e=>{const p=point(e);if(!drawing)return;const lastPoint=route[route.length-1];if(p.x>lastPoint.x+3)route.push({x:p.x,y:Math.max(height*.28,Math.min(height*.76,p.y))})};
+  const jump=()=>{if(player&&player.on){player.vy=-360;player.on=false;stateEl.textContent='跳起来！'}};
+  canvas.addEventListener('pointerdown',e=>{drawing=true;canvas.setPointerCapture(e.pointerId);drawPoint(e);jump()});canvas.addEventListener('pointermove',drawPoint);canvas.addEventListener('pointerup',()=>{drawing=false;stateEl.textContent='继续前进'});canvas.addEventListener('pointercancel',()=>drawing=false);window.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();jump()}});document.querySelector('#restart').addEventListener('click',reset);window.addEventListener('resize',resize);
+  const yAt=x=>{for(let i=1;i<route.length;i++){const a=route[i-1],b=route[i];if(x<=b.x){const t=(x-a.x)/Math.max(1,b.x-a.x);return a.y+(b.y-a.y)*t}}return ground};
+  const cat=()=>{ctx.save();ctx.translate(player.x,player.y);ctx.fillStyle='#384852';ctx.beginPath();ctx.ellipse(0,0,18,13,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(16,-11,13,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.moveTo(7,-19);ctx.lineTo(10,-33);ctx.lineTo(17,-22);ctx.moveTo(22,-22);ctx.lineTo(30,-33);ctx.lineTo(32,-15);ctx.fill();ctx.strokeStyle='#384852';ctx.lineWidth=5;ctx.beginPath();ctx.arc(-17,-10,22,0,Math.PI*1.25);ctx.stroke();ctx.fillStyle='#f4c95d';ctx.beginPath();ctx.arc(20,-13,2,0,Math.PI*2);ctx.fill();ctx.restore()};
+  const loop=now=>{const dt=Math.min(.035,(now-last)/1000);last=now;player.x+=110*dt;player.vy+=880*dt;player.y+=player.vy*dt;const line=yAt(player.x);if(player.y>=line-18){player.y=line-18;player.vy=0;player.on=true}if(player.x>width-35){player.x=25;score+=1}score+=dt*2;scoreEl.textContent=`距离 ${Math.floor(score)} m`;ctx.clearRect(0,0,width,height);ctx.strokeStyle='#21313a';ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();route.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();ctx.fillStyle='rgba(33,49,58,.13)';ctx.beginPath();ctx.ellipse(player.x,line+2,20,4,0,0,Math.PI*2);ctx.fill();cat();raf=requestAnimationFrame(loop)};
+  resize();
++  </script>
++</body>
++</html>
